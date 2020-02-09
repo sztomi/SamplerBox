@@ -1,11 +1,12 @@
+# cython: language_level=3
 #
-#  SamplerBox 
+#  SamplerBox
 #
 #  author:    Joseph Ernest (twitter: @JosephErnest, mail: contact@samplerbox.org)
 #  url:       http://www.samplerbox.org/
 #  license:   Creative Commons ShareAlike 3.0 (http://creativecommons.org/licenses/by-sa/3.0/)
 #
-#  samplerbox_audio.pyx: Audio engine (Cython) 
+#  samplerbox_audio.pyx: Audio engine (Cython)
 #
 
 
@@ -40,35 +41,35 @@ def mixaudiobuffers(list playingsounds, list rmlist, int frame_count, numpy.ndar
             N = <int> ((length - 4 - pos) / speed)
 
         if snd.isfadeout:
-            if fadeoutpos > FADEOUTLENGTH: 
-                rmlist.append(snd)   
-            ii = 0   
+            if fadeoutpos > FADEOUTLENGTH:
+                rmlist.append(snd)
+            ii = 0
             for i in range(N):
                 j = pos + ii * speed
-                ii += 1                  
+                ii += 1
                 k = <int> j
                 if k > length - 2:
                     pos = looppos + 1
                     snd.pos = pos
                     ii = 0
-                    j = pos + ii * speed   
-                    k = <int> j       
+                    j = pos + ii * speed
+                    k = <int> j
                 bb[2 * i] += (zz[2 * k] + (j - k) * (zz[2 * k + 2] - zz[2 * k])) * fadeout[fadeoutpos + i]                   # linear interpolation
-                bb[2 * i + 1] += (zz[2 * k + 1] + (j - k) * (zz[2 * k + 3] - zz[2 * k + 1])) * fadeout[fadeoutpos + i]        
+                bb[2 * i + 1] += (zz[2 * k + 1] + (j - k) * (zz[2 * k + 3] - zz[2 * k + 1])) * fadeout[fadeoutpos + i]
             snd.fadeoutpos += i
 
         else:
-            ii = 0            
+            ii = 0
             for i in range(N):
                 j = pos + ii * speed
-                ii += 1                  
+                ii += 1
                 k = <int> j
                 if k > length - 2:
                     pos = looppos + 1
                     snd.pos = pos
                     ii = 0
-                    j = pos + ii * speed   
-                    k = <int> j  
+                    j = pos + ii * speed
+                    k = <int> j
                 bb[2 * i] += zz[2 * k] + (j - k) * (zz[2 * k + 2] - zz[2 * k])                                               # linear interpolation
                 bb[2 * i + 1] += zz[2 * k + 1] + (j - k) * (zz[2 * k + 3] - zz[2 * k + 1])
 

@@ -15,11 +15,11 @@ SamplerBox works with the RaspberryPi's built-in soundcard, but it is recommende
 1. Install the required dependencies (Python-related packages and audio libraries):
 
   ~~~
-  sudo apt-get update ; sudo apt-get -y install git python-dev python-pip python-numpy cython python-smbus portaudio19-dev libportaudio2 libffi-dev
-  sudo pip install rtmidi-python pyaudio cffi sounddevice
+  sudo apt-get update ; sudo apt-get -y install git python-dev python-smbus portaudio19-dev libportaudio2 libffi-dev libatlas3-base
+  pip install Cython rtmidi-python pyaudio cffi sounddevice numpy
   ~~~
 
-2. Download SamplerBox and build it with: 
+2. Download SamplerBox and build it with:
 
   ~~~
   git clone https://github.com/josephernest/SamplerBox.git
@@ -28,7 +28,7 @@ SamplerBox works with the RaspberryPi's built-in soundcard, but it is recommende
 
 3. Run the soft with `python samplerbox.py`.
 
-4. Play some notes on the connected MIDI keyboard, you'll hear some sound!  
+4. Play some notes on the connected MIDI keyboard, you'll hear some sound!
 
 *(Optional)*  Modify `samplerbox.py`'s first lines if you want to change root directory for sample-sets, default soundcard, etc.
 
