@@ -54,9 +54,9 @@ class waveread(wave.Wave_read):
     self._loops = []
     self._ieee = False
     self._file = Chunk(file, bigendian=0)
-    if self._file.getname() != "RIFF":
+    if self._file.getname() != b"RIFF":
       raise Error("file does not start with RIFF id")
-    if self._file.read(4) != "WAVE":
+    if self._file.read(4) != b"WAVE":
       raise Error("not a WAVE file")
     self._fmt_chunk_read = 0
     self._data_chunk = None
@@ -67,16 +67,16 @@ class waveread(wave.Wave_read):
       except EOFError:
         break
       chunkname = chunk.getname()
-      if chunkname == "fmt ":
+      if chunkname == b"fmt ":
         self._read_fmt_chunk(chunk)
         self._fmt_chunk_read = 1
-      elif chunkname == "data":
+      elif chunkname == b"data":
         if not self._fmt_chunk_read:
           raise Error("data chunk before fmt chunk")
         self._data_chunk = chunk
         self._nframes = chunk.chunksize // self._framesize
         self._data_seek_needed = 0
-      elif chunkname == "cue ":
+      elif chunkname == b"cue ":
         numcue = struct.unpack("<i", chunk.read(4))[0]
         for i in range(numcue):
           (
@@ -88,7 +88,7 @@ class waveread(wave.Wave_read):
             sampleoffset,
           ) = struct.unpack("<iiiiii", chunk.read(24))
           self._cue.append(sampleoffset)
-      elif chunkname == "smpl":
+      elif chunkname == b"smpl":
         (
           manuf,
           prod,
@@ -221,7 +221,7 @@ def MidiCallback(message, time_stamp):
   note = message[1] if len(message) > 1 else None
   midinote = note
   velocity = message[2] if len(message) > 2 else None
-  # print(f"Note {note} (v: {velocity}), {messagetype}")
+  print(f"Note {note} [{messagetype}] (v: {velocity})")
 
   if messagetype == 9 and velocity == 0:
     messagetype = 8
@@ -301,11 +301,13 @@ def ActuallyLoad():
     SAMPLES_DIR if os.listdir(SAMPLES_DIR) else "."
   )  # use current folder (containing 0 Saw) if no user media containing samples has been found
 
-  basename = next(
-    (f for f in os.listdir(samplesdir) if f.startswith("%d " % preset)), None
-  )  # or next(glob.iglob("blah*"), None)
+  smpls = os.listdir(samplesdir)
+
+  from pathlib import Path
+  basename = next(Path(samplesdir).glob(f"{preset} *"), None)
+
   if basename:
-    dirname = os.path.join(samplesdir, basename)
+    dirname = str(basename.resolve())
   if not basename:
     print("Preset empty: %s" % preset)
     display("E%03d" % preset)
@@ -340,9 +342,9 @@ def ActuallyLoad():
           pattern = pattern.split(",")[0]
           pattern = re.escape(pattern.strip())
           pattern = (
-            pattern.replace(r"\%midinote", r"(?P<midinote>\d+)")
-            .replace(r"\%velocity", r"(?P<velocity>\d+)")
-            .replace(r"\%notename", r"(?P<notename>[A-Ga-g]#?[0-9])")
+            pattern.replace(r"%midinote", r"(?P<midinote>\d+)")
+            .replace(r"%velocity", r"(?P<velocity>\d+)")
+            .replace(r"%notename", r"(?P<notename>[A-Ga-g]#?[0-9])")
             .replace(r"\*", r".*?")
             .strip()
           )  # .*? => non greedy
@@ -527,7 +529,6 @@ if USE_SERIALPORT_MIDI:
 #########################################
 
 preset = 0
-LoadSamples()
 
 
 #########################################
@@ -535,14 +536,26 @@ LoadSamples()
 # MAIN LOOP
 #########################################
 
-midi_in = [rtmidi.MidiIn(b"in")]
-previous = []
-while True:
-  for port in midi_in[0].ports:
-    if port not in previous and b"Midi Through" not in port:
-      midi_in.append(rtmidi.MidiIn(b"in"))
-      midi_in[-1].callback = MidiCallback
-      midi_in[-1].open_port(port)
-      print(b"Opened MIDI: " + port)
-  previous = midi_in[0].ports
-  time.sleep(2)
+def handle_args():
+  from argparse import ArgumentParser
+  global preset
+  parser = ArgumentParser()
+  parser.add_argument("-p", "--preset", type=int, default=0)
+  args = parser.parse_args()
+  preset = args.preset
+
+if __name__ == "__main__":
+  handle_args()
+  LoadSamples()
+
+  midi_in = [rtmidi.MidiIn(b"in")]
+  previous = []
+  while True:
+    for port in midi_in[0].ports:
+      if port not in previous and b"Midi Through" not in port:
+        midi_in.append(rtmidi.MidiIn(b"in"))
+        midi_in[-1].callback = MidiCallback
+        midi_in[-1].open_port(port)
+        print(b"Opened MIDI: " + port)
+    previous = midi_in[0].ports
+    time.sleep(2)
